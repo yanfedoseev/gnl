@@ -1,51 +1,67 @@
 #include "get_next_line.h"
 
-static char		*readline(const int fd, char *buff, int *ret)
+static int		myread(char **str, int fd)
 {
-	char	tmp[BUFF_SIZE + 1];
-	//char	*tmp2;
+	int		ret;
+	char	*s;
+	char	buf[BUFF_SIZE + 1];
 
-	*ret = read(fd, tmp, BUFF_SIZE);
-	tmp[*ret] = '\0';
-	//tmp2 = buff;
-	if (!(buff = ft_strjoin(buff, tmp)))
-		return (NULL);
-	//ft_strdel(&tmp2);
-	return (buff);
+	if ((ret = read(fd, buf, BUFF_SIZE)) == -1)
+		return (-1);
+	buf[ret] = '\0';
+	s = *str;
+	*str = ft_strjoin(*str, buf);
+	if (*s != 0)
+		free(s);
+	return (ret);
 }
 
-int				ft_cpy_end(char **line, char **buff)
+static int		get_line(char **str, char **line, char *s)
 {
-	if (!(*line = ft_strdup(*buff)))
-		return (-1);
-	ft_bzero(*buff, ft_strlen(*buff));
-	return (1);
-}
+	int		i;
+	char	*join;
 
-int				get_next_line(const int fd, char **line)
-{
-	static char		*buff = "";
-	int				ret;
-	char			*str;
-
-	ret = 1;
-	if (!line || fd < 0 || buff[0] == '\0')
-		return (-1);
-	while (ret > 0)
+	i = 0;
+	if (*s == '\n')
+		i = 1;
+	*s = 0;
+	*line = ft_strjoin("", *str);							// line = cpy(str)
+	if (i == 0 && ft_strlen(*str) != 0)
 	{
-		if (str = ft_strchr(buff, '\n'))
+		*str = ft_strnew(1);
+		return (1);
+	}
+	else if (i == 0 && !(ft_strlen(*str)))
+		return (0);
+	join = *str;
+	*str = ft_strjoin(s + 1, "");
+	free(join);
+	return (i);
+}
+
+int				get_next_line(int const fd, char **line)
+{
+	int			ret;
+	char		*s;
+	static char	*str;
+
+	if (str == 0)
+		str = "";
+	if (!line || BUFF_SIZE < 1 || fd < 0)
+		return (-1);
+	ret = BUFF_SIZE;
+	while (line)
+	{
+		s = str;
+		while (*s || ret < BUFF_SIZE)							// ret < B_S ??
 		{
-			*str = '\0';
-			if (!(*line = ft_strdup(buff)))
-				return (-1);
-			ft_memmove(buff, str + 1, ft_strlen(str + 1) + 1);
-			return (1);
+			if (*s == '\n' || *s == 0 || *s == -1)				// s == 0/1 ??
+				return (get_line(&str, line, s));
+			s++;
 		}
-		if (!(buff = readline(fd, buff, &ret)))
+		ret = myread(&str, fd);
+		if (ret == -1)
 			return (-1);
 	}
-	ft_strdel(&str);
-	if (ret == 0 && ft_strlen(buff))
-		ret = ft_cpy_end(&(*line), &buff);
-	return (ret);
+	return (0);
 }

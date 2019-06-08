@@ -1,22 +1,34 @@
 #include "get_next_line.h"
+#include <stdio.h>
 #include <fcntl.h>
+#include <sys/uio.h>
+#include <sys/types.h>
 
-int		main(int argc, char **argv)
+int	main(int argc, char const *argv[])
 {
-	int		fd;
-	char	*line;
+	int fd;
+	//int fd_2;
+	char *line;
+	int status;
 
-	if (argc == 1)
-		fd = 0;
-	else if (argc == 2)
-		fd = open(argv[1], O_RDONLY);
-	else
-		return (-1);
-	while (get_next_line(fd, &line) == 1)
-	{
-		ft_putendl(line);
+	fd = open(argv[1], O_RDONLY);
+	// fd_2 = open(argv[2], O_RDONLY);
+	// status = 1;
+	// while (status)
+	// {
+	// 	status = get_next_line(fd, &line);
+	// 	printf("[%d] %s\n", fd, line);
+	// 	free(line);
+	// 	status = get_next_line(fd_2, &line);
+	// 	printf("[%d] %s\n", fd_2, line);
+	// 	free(line);
+	// }
+
+	status = get_next_line(fd, &line);
+	printf("[%d] %s\n", fd, line);
 		free(line);
-	}
-	if (argc == 2)
-		close(fd);
+	// status = get_next_line(fd, &line);
+	// printf("[%d] %s\n", fd, line);
+	// 	free(line);
+	return (argc);
 }
