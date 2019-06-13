@@ -1,67 +1,74 @@
 #include "get_next_line.h"
 
-static int		myread(char **str, int fd)
+static char		*strjoin_free(char *s1, char *s2)
 {
-	int		ret;
-	char	*s;
-	char	buf[BUFF_SIZE + 1];
+	char			*res;
+	size_t			i;
+	size_t			j;
 
-	if ((ret = read(fd, buf, BUFF_SIZE)) == -1)
-		return (-1);
-	buf[ret] = '\0';
-	s = *str;
-	*str = ft_strjoin(*str, buf);
-	if (*s != 0)
-		free(s);
-	return (ret);
+	if (!s1 || !s2)
+		return (NULL);
+	if (!(res = ft_strnew(ft_strlen(s1) + ft_strlen(s2))))
+		return (NULL);
+	i = -1;
+	j = 0;
+	while (s1[++i])
+		res[i] = s1[i];
+	while (s2[j])
+		res[i++] = s2[j++];
+	free(s1);
+	return (res);
 }
 
-static int		get_line(char **str, char **line, char *s)
+static int		ft_getline(char **arr, int fd, char **line)
 {
-	int		i;
-	char	*join;
+	char			*res;
+	int				i;
 
-	i = 0;
-	if (*s == '\n')
-		i = 1;
-	*s = 0;
-	*line = ft_strjoin("", *str);							// line = cpy(str)
-	if (i == 0 && ft_strlen(*str) != 0)
-	{
-		*str = ft_strnew(1);
-		return (1);
-	}
-	else if (i == 0 && !(ft_strlen(*str)))
+	if (!(ft_strchr(arr[fd], '\n')))
 		return (0);
-	join = *str;
-	*str = ft_strjoin(s + 1, "");
-	free(join);
-	return (i);
+	i = -1;
+	while (arr[fd][++i] != '\n')
+		;
+	if (!(res = ft_strnew(i)))
+		return (-1);
+	ft_strncpy(res, arr[fd], i);
+	if (!(*line = ft_strdup(res)))
+	{
+		free(res);
+		return (-1);
+	}
+	arr[fd] = ft_strdup(&arr[fd][i + 1]);
+	free(res);
+	return (1);
 }
 
 int				get_next_line(int const fd, char **line)
 {
-	int			ret;
-	char		*s;
-	static char	*str;
+	static char		*arr[12000];
+	int				bsize;
+	char			buf[BUFF_SIZE + 1];
 
-	if (str == 0)
-		str = "";
-	if (!line || BUFF_SIZE < 1 || fd < 0)
+	if (!line || fd < 0 || fd > 12000)
 		return (-1);
-	ret = BUFF_SIZE;
-	while (line)
+	while ((bsize = read(fd, buf, BUFF_SIZE)) > 0)
 	{
-		s = str;
-		while (*s || ret < BUFF_SIZE)							// ret < B_S ??
-		{
-			if (*s == '\n' || *s == 0 || *s == -1)				// s == 0/1 ??
-				return (get_line(&str, line, s));
-			s++;
-		}
-		ret = myread(&str, fd);
-		if (ret == -1)
-			return (-1);
+		buf[bsize] = '\0';
+		if (arr[fd] == 0)
+			arr[fd] = ft_strnew(0);
+		arr[fd] = strjoin_free(arr[fd], buf);
+		if (ft_getline(arr, fd, line))
+			return (1);
 	}
-	return (0);
+	if (bsize == -1)
+		return (-1);
+	//if (!ft_strlen(arr[fd]))
+	//	return (0);
+	if (!arr[fd][0])
+		return (0);
+	if (ft_getline(arr, fd, line))
+		return (1);
+	*line = ft_strdup(arr[fd]);
+	free(arr[fd]);
+	return (1);
 }
